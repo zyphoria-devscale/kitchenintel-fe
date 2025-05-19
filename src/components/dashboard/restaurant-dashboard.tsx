@@ -258,7 +258,7 @@ export const RestaurantDashboard = () => {
         <div className="flex mb-8">
           <div className="border-b border-gray-200 w-full">
             <nav className="flex space-x-8">
-              {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((tab) => (
+              {(['weekly', 'monthly'] as TimeRange[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => handleTabClick(tab)}

@@ -108,16 +108,31 @@ const menuFormSchema = z.object({
     image: z.string().optional()
 });
 
+type MenuManagementProps = {
+    menuList: {
+        id: string;
+        title: string;
+        description: string | null;
+        price: any; // Using 'any' for Decimal type compatibility
+        isRecommend: boolean;
+        categoryId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }[];
+};
+
 type MenuFormValues = z.infer<typeof menuFormSchema>;
 
-export const MenuManagement = () => {
-    const [menus, setMenus] = useState<Menu[]>(mockMenus);
-    const [categories, setCategories] = useState<MenuCategory[]>(mockCategories);
+export const MenuManagement = ({ menuList }: MenuManagementProps) => {
+    const [menus, setMenus] = useState<Menu[]>(menuList || []);
+    const [categories, setCategories] = useState<MenuCategory[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [currentMenu, setCurrentMenu] = useState<Menu | null>(null);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [categoryError, setCategoryError] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -128,6 +143,63 @@ export const MenuManagement = () => {
         const matchesCategory = selectedCategory ? menu.categoryId === selectedCategory : true;
         return matchesSearch && matchesCategory;
     });
+
+    useEffect(() => {
+        // Map database fields to component state fields if needed
+        if (menuList && menuList.length > 0) {
+            const mappedMenus = menuList.map(item => ({
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                price: parseFloat(item.price.toString()), // Convert Decimal to number
+                isRecommend: item.isRecommend, // Make sure this matches your DB field
+                categoryId: item.categoryId,
+                image: '/api/placeholder/800/450' // Default image as your DB might not have images
+            }));
+
+            setMenus(mappedMenus);
+        }
+    }, [menuList]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            setIsLoadingCategories(true);
+            setCategoryError(null);
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/menu-categories/');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data)) {
+                        // Map the API response to your category structure
+                        const mappedCategories = data.map(cat => ({
+                            id: cat.id,
+                            title: cat.title,
+                            description: cat.description,
+                            parentId: cat.parent_id
+                        }));
+                        setCategories(mappedCategories);
+                    } else {
+                        setCategoryError('Invalid data format received from server');
+                        setCategories([]); // Just use empty array, not mock data
+                    }
+                } else {
+                    const errorMessage = `Failed to fetch categories: ${response.status}`;
+                    console.error(errorMessage);
+                    setCategoryError(errorMessage);
+                    setCategories([]); // Just use empty array, not mock data
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                console.error('Error fetching categories:', error);
+                setCategoryError(`Network error: ${errorMessage}`);
+                setCategories([]); // Just use empty array, not mock data
+            } finally {
+                setIsLoadingCategories(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     useEffect(() => {
         const checkSidebarState = () => {
@@ -185,58 +257,182 @@ export const MenuManagement = () => {
     // Get category name by ID
     const getCategoryName = (categoryId: string): string => {
         const category = categories.find(cat => cat.id === categoryId);
-        return category ? category.title : 'Unknown';
+        return category ? category.title : '';
     };
 
     // Create a new menu
-    const handleCreateMenu = (data: MenuFormValues) => {
-        const newMenu: Menu = {
-            id: (menus.length + 1).toString(),
-            title: data.title,
-            description: data.description || null,
-            price: parseFloat(data.price),
-            isRecommend: data.isRecommend,
-            categoryId: data.categoryId,
-            image: data.image || '/api/placeholder/800/450' // Default placeholder
-        };
+    const handleCreateMenu = async (data: MenuFormValues) => {
+        try {
+            // Show loading state
+            toast.loading("Creating menu...");
 
-        setMenus([...menus, newMenu]);
-        setIsCreateDialogOpen(false);
-        toast.success("Menu created");
+            // Prepare the data in the format your Django API expects
+            const menuData = {
+                title: data.title,
+                description: data.description || "",
+                price: parseFloat(data.price),
+                is_recommended: data.isRecommend,  // This is now correct
+                category_id: data.categoryId,
+            };
+
+            // Make the API call to your Django backend
+            const response = await fetch('http://127.0.0.1:8000/api/menus/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                },
+                body: JSON.stringify(menuData)
+            });
+
+            // Check if the request was successful
+            if (!response.ok) {
+                // Convert non-2xx HTTP responses into errors
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to create menu');
+            }
+
+            // Get the newly created menu from the response
+            const newMenu = await response.json();
+
+            // Update the local state with the new menu from the server
+            setMenus([...menus, {
+                id: newMenu.id,
+                title: newMenu.title,
+                description: newMenu.description,
+                price: newMenu.price,
+                isRecommend: newMenu.is_recommend,
+                categoryId: newMenu.category_id,
+                // image: newMenu.image
+            }]);
+
+            // Close the dialog and show success message
+            setIsCreateDialogOpen(false);
+            toast.dismiss(); // Remove loading toast
+            toast.success("Menu created successfully");
+
+        } catch (error) {
+            // Handle any errors
+            toast.dismiss(); // Remove loading toast
+            toast.error(`Failed to create menu: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Error creating menu:', error);
+        }
     };
 
     // Update existing menu
-    const handleUpdateMenu = (data: MenuFormValues) => {
+    const handleUpdateMenu = async (data: MenuFormValues) => {
         if (!currentMenu) return;
 
-        const updatedMenus = menus.map(menu => {
-            if (menu.id === currentMenu.id) {
-                return {
-                    ...menu,
-                    title: data.title,
-                    description: data.description || null,
-                    price: parseFloat(data.price),
-                    isRecommend: data.isRecommend,
-                    categoryId: data.categoryId,
-                    image: data.image || menu.image
-                };
-            }
-            return menu;
-        });
+        try {
+            // Show loading state
+            toast.loading("Updating menu...");
 
-        setMenus(updatedMenus);
-        setIsEditDialogOpen(false);
-        setCurrentMenu(null);
-        toast.success("Menu updated");
+            // Prepare the data in the format your Django API expects
+            const menuData = {
+                title: data.title,
+                description: data.description || "",
+                price: parseFloat(data.price.replace(/\./g, '')), // Remove dot separators
+                is_recommend: data.isRecommend,
+                category_id: data.categoryId,
+            };
+
+            // Make the API call to your Django backend
+            const response = await fetch(`http://127.0.0.1:8000/api/menus/${currentMenu.id}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                },
+                body: JSON.stringify(menuData)
+            });
+
+            // Check if the request was successful
+            if (!response.ok) {
+                // Convert non-2xx HTTP responses into errors
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to update menu');
+            }
+
+            // Get the updated menu from the response
+            const updatedMenu = await response.json();
+
+            // Update the local state with the updated menu
+            const updatedMenus = menus.map(menu => {
+                if (menu.id === currentMenu.id) {
+                    return {
+                        id: updatedMenu.id,
+                        title: updatedMenu.title,
+                        description: updatedMenu.description,
+                        price: parseFloat(updatedMenu.price.toString()),
+                        isRecommend: updatedMenu.is_recommend,
+                        categoryId: updatedMenu.category_id,
+                        image: menu.image // Preserve the image URL from the existing menu
+                    };
+                }
+                return menu;
+            });
+
+            setMenus(updatedMenus);
+            setIsEditDialogOpen(false);
+            setCurrentMenu(null);
+
+            // Show success message
+            toast.dismiss(); // Remove loading toast
+            toast.success("Menu updated successfully");
+
+        } catch (error) {
+            // Handle any errors
+            toast.dismiss(); // Remove loading toast
+            toast.error(`Failed to update menu: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Error updating menu:', error);
+        }
     };
 
     // Delete menu
-    const handleDeleteMenu = (menuId: string) => {
-        const updatedMenus = menus.filter(menu => menu.id !== menuId);
-        const menuToDelete = menus.find(menu => menu.id === menuId);
+    const handleDeleteMenu = async (menuId: string) => {
+        try {
+            // Show loading state
+            toast.loading("Deleting menu...");
 
-        setMenus(updatedMenus);
-        toast.success("Menu deleted");
+            // Make the API call to your Django backend
+            const response = await fetch(`http://127.0.0.1:8000/api/menus/${menuId}/`, {
+                method: 'DELETE',
+                headers: {
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                },
+            });
+
+            // Check if the request was successful (DELETE typically returns 204 No Content)
+            if (!response.ok) {
+                // For DELETE requests, some APIs might not return JSON
+                let errorMessage = `Failed to delete menu (Status: ${response.status})`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorMessage;
+                } catch (e) {
+                    // If response is not JSON, use the status text
+                    errorMessage = `Failed to delete menu: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Update the local state by removing the deleted menu
+            const updatedMenus = menus.filter(menu => menu.id !== menuId);
+            setMenus(updatedMenus);
+
+            // Show success message
+            toast.dismiss(); // Remove loading toast
+            toast.success("Menu deleted successfully");
+
+        } catch (error) {
+            // Handle any errors
+            toast.dismiss(); // Remove loading toast
+            toast.error(`Failed to delete menu: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Error deleting menu:', error);
+        }
     };
 
     // Menu Form Component (for both create and edit)
@@ -293,8 +489,22 @@ export const MenuManagement = () => {
                     <Label htmlFor="price">Price</Label>
                     <Input
                         id="price"
-                        placeholder="0.00"
-                        {...form.register("price")}
+                        placeholder="20.000"
+                        {...form.register("price", {
+                            onChange: (e) => {
+                                // Remove non-numeric characters
+                                let value = e.target.value.replace(/[^\d]/g, '');
+                                // Format with thousand separators (dots)
+                                value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                // Update the input value
+                                e.target.value = value;
+                            }
+                        })}
+                        onBlur={(e) => {
+                            // On blur, ensure there's a valid number for form validation
+                            const numericValue = e.target.value.replace(/\./g, '');
+                            form.setValue('price', numericValue, { shouldValidate: true });
+                        }}
                     />
                     {form.formState.errors.price && (
                         <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
@@ -306,16 +516,27 @@ export const MenuManagement = () => {
                     <Select
                         defaultValue={form.getValues("categoryId")}
                         onValueChange={(value) => form.setValue("categoryId", value)}
+                        disabled={isLoadingCategories}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
+                            <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select a category"} />
                         </SelectTrigger>
                         <SelectContent>
-                            {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                    {category.title}
+                            {isLoadingCategories ? (
+                                <SelectItem value="loading" disabled>
+                                    Loading categories...
                                 </SelectItem>
-                            ))}
+                            ) : categories.length > 0 ? (
+                                categories.filter(item => item.parentId !== null).map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        {category.title}
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="empty" disabled>
+                                    No categories available
+                                </SelectItem>
+                            )}
                         </SelectContent>
                     </Select>
                     {form.formState.errors.categoryId && (
@@ -425,7 +646,7 @@ export const MenuManagement = () => {
                             <Card key={menu.id} className="overflow-hidden">
                                 <div className="relative h-48 w-full">
                                     <img
-                                        src={menu.image || '/api/placeholder/800/450'}
+                                        src={'https://plus.unsplash.com/premium_photo-1673108852141-e8c3c22a4a22?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'}
                                         alt={menu.title}
                                         className="object-cover w-full h-full"
                                     />
@@ -444,7 +665,7 @@ export const MenuManagement = () => {
                                             </CardDescription>
                                         </div>
                                         <div className="font-bold text-xl">
-                                            ${menu.price.toFixed(2)}
+                                            Rp {menu.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                                         </div>
                                     </div>
                                 </CardHeader>
