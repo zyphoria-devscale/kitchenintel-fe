@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TOKEN_KEY } from '@/lib/token';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -167,11 +168,13 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             };
 
             console.log('Submitting order data:', orderData);
-
+    
+            const token = localStorage.getItem(TOKEN_KEY);
             const response = await fetch(`${API_URL}/orders-with-items/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    "Authorization": `Token ${token}`
                 },
                 body: JSON.stringify(orderData)
             });

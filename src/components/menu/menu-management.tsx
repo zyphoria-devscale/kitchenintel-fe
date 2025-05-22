@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import toast from 'react-hot-toast';
+import { TOKEN_KEY } from '@/lib/token';
 
 // API URL
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -183,7 +184,12 @@ export const MenuManagement = () => {
         setIsLoadingCategories(true);
         setCategoryError(null);
         try {
-            const response = await fetch(`${API_URL}/menu-categories/`);
+            const token = localStorage.getItem(TOKEN_KEY);
+            const response = await fetch(`${API_URL}/menu-categories/`, {
+                headers: {
+                    "Authorization": `Token ${token}`
+                },
+            });
             if (response.ok) {
                 const data = await response.json();
 
@@ -309,10 +315,12 @@ export const MenuManagement = () => {
                 category_id: data.categoryId,
             };
 
+            const token = localStorage.getItem(TOKEN_KEY)
             const response = await fetch(`${API_URL}/menus/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    "Authorization": `Token ${token}`
                 },
                 body: JSON.stringify(menuData)
             });
@@ -344,7 +352,7 @@ export const MenuManagement = () => {
 
         try {
             toast.loading("Updating menu...");
-
+            const token = localStorage.getItem(TOKEN_KEY)
             const menuData = {
                 title: data.title,
                 description: data.description || "",
@@ -357,6 +365,7 @@ export const MenuManagement = () => {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    "Authorization": `Token ${token}`
                 },
                 body: JSON.stringify(menuData)
             });
@@ -385,9 +394,14 @@ export const MenuManagement = () => {
     const handleDeleteMenu = async (menuId: string) => {
         try {
             toast.loading("Deleting menu...");
-
+            const token = localStorage.getItem(TOKEN_KEY);
             const response = await fetch(`${API_URL}/menus/${menuId}/`, {
                 method: 'DELETE',
+                headers: {
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                    "Authorization": `Token ${token}`
+                },
             });
 
             if (!response.ok) {

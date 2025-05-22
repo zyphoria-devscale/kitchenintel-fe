@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu, X, Home,
   LogOut, ChevronRight, ChevronLeft,
@@ -10,12 +10,14 @@ import {
   Utensils,
   CookingPot
 } from 'lucide-react';
+import { TOKEN_KEY } from '@/lib/token';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Handle responsive behavior
   useEffect(() => {
@@ -46,6 +48,36 @@ export default function Sidebar() {
     const event = new CustomEvent('sidebarChange', { detail: { isOpen } });
     window.dispatchEvent(event);
   }, [isOpen, mounted]);
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      router.push('/login');
+      console.error("token not found")
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8000/api/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Token ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const responseData = await response.json();
+        console.log("logout failed:", responseData)
+      }
+    } catch (error) {
+      console.log("error during logout:", error)
+    } finally {
+      localStorage.removeItem(TOKEN_KEY)
+      router.push('/login')
+    }
+  }
+
 
 
   const toggleSidebar = () => {
@@ -150,6 +182,7 @@ export default function Sidebar() {
           {/* Footer */}
           <div className="p-4 border-t border-gray-700">
             <button
+              onClick={handleLogout}
               className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full ${isOpen ? '' : 'justify-center'
                 }`}
             >

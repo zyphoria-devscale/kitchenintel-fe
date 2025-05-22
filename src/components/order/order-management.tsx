@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import toast from 'react-hot-toast';
 import CreateOrderModal from './create-order-modal';
+import { TOKEN_KEY } from '@/lib/token';
 
 // API URL
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -72,14 +73,6 @@ type Order = {
     order_items: OrderItem[];
     created_at: string;
     updated_at: string;
-};
-
-// Pagination type
-type PaginationResponse<T> = {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
 };
 
 // Form schemas
@@ -158,11 +151,19 @@ export const OrderManagement = () => {
             }
 
             // Create the URL with all parameters
+            const token = localStorage.getItem(TOKEN_KEY);
             const url = `${API_URL}/orders-with-items/?${params.toString()}`;
 
             console.log(`Fetching orders from: ${url}`); // Debugging
 
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                    "Authorization": `Token ${token}`
+                },
+            });
             if (!response.ok) {
                 throw new Error(`Failed to fetch orders: ${response.status}`);
             }
@@ -214,7 +215,15 @@ export const OrderManagement = () => {
         if (!mounted) return;
 
         try {
-            const response = await fetch(`${API_URL}/menu-categories/`);
+            const token = localStorage.getItem(TOKEN_KEY);
+            const response = await fetch(`${API_URL}/menu-categories/`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                    "Authorization": `Token ${token}`
+                },
+            });
             if (!response.ok) {
                 throw new Error(`Failed to fetch categories: ${response.status}`);
             }
@@ -242,7 +251,15 @@ export const OrderManagement = () => {
                     url += `&category_id=${categoryId}`;
                 }
 
-                const response = await fetch(url);
+                const token = localStorage.getItem(TOKEN_KEY)
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include authentication if your API requires it
+                        // 'Authorization': 'Bearer your-token-here'
+                        "Authorization": `Token ${token}`
+                    },
+                });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch menus: ${response.status}`);
                 }
@@ -298,7 +315,15 @@ export const OrderManagement = () => {
             const url = `${API_URL}/orders-with-items/?${params.toString()}`;
             console.log(`Fetching unpaid orders from: ${url}`);
 
-            const response = await fetch(url);
+             const token = localStorage.getItem(TOKEN_KEY)
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                    "Authorization": `Token ${token}`
+                },
+            });
             if (!response.ok) {
                 throw new Error(`Failed to fetch unpaid orders: ${response.status}`);
             }
@@ -439,37 +464,18 @@ export const OrderManagement = () => {
         return menu ? menu.price : 0;
     };
 
-    // Fetch a single order
-    const fetchOrder = async (orderId: string) => {
-        if (!mounted) return null;
-
-        try {
-            const response = await fetch(`${API_URL}/orders-with-items/${orderId}/`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch order: ${response.status}`);
-            }
-
-            const data = await response.json();
-            setCurrentOrder(data);
-            return data;
-        } catch (error) {
-            console.error(`Error fetching order ${orderId}:`, error);
-            toast.error('Failed to load order details');
-            return null;
-        }
-    };
-
-
     const handleUpdateOrder = async (data: OrderFormValues) => {
         if (!mounted || !currentOrder) return;
 
         try {
             toast.loading('Updating order...');
 
+            const token = localStorage.getItem(TOKEN_KEY)
             const response = await fetch(`${API_URL}/orders-with-items/${currentOrder.id}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    "Authorization": `Token ${token}`
                 },
                 body: JSON.stringify({
                     customer_name: data.customer_name,
@@ -509,8 +515,15 @@ export const OrderManagement = () => {
         try {
             toast.loading('Deleting order...');
 
+            const token = localStorage.getItem(TOKEN_KEY)
             const response = await fetch(`${API_URL}/orders/${orderId}/`, {
                 method: 'DELETE',
+                 headers: {
+                    'Content-Type': 'application/json',
+                    // Include authentication if your API requires it
+                    // 'Authorization': 'Bearer your-token-here'
+                    "Authorization": `Token ${token}`
+                },
             });
 
             if (!response.ok) {
@@ -548,10 +561,12 @@ export const OrderManagement = () => {
                 throw new Error('Order not found');
             }
 
+            const token = localStorage.getItem(TOKEN_KEY)
             const response = await fetch(`${API_URL}/orders-with-items/${orderId}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    "Authorization": `Token ${token}`
                 },
                 body: JSON.stringify({
                     customer_name: order.customer_name,
