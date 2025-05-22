@@ -1,4 +1,4 @@
-import { MenuManagement } from '@/components/dashboard/menu-management'
+import { MenuManagement } from '@/components/menu/menu-management'
 import { prisma } from '@/config/prisma'
 
 
@@ -19,7 +19,7 @@ export default async function Page() {
 
   return (
     <>
-        <MenuManagement menuList={menuList} />
+      <MenuManagement menuList={menuList} />
     </>
   )
 }
