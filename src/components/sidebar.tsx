@@ -16,44 +16,59 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  
+  // Check if we're on the login page
+  const isLoginPage = pathname === '/login';
 
-  // Handle responsive behavior
+  // Handle responsive behavior and check authentication
   useEffect(() => {
     setMounted(true);
+    
+    // Check screen size
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 1024);
       setIsOpen(window.innerWidth >= 1024);
     };
-
-    // Set initial state
+    
+    // Check authentication
+    const checkAuth = () => {
+      const token = localStorage.getItem(TOKEN_KEY);
+      setIsAuthenticated(!!token);
+    };
+    
+    // Initial checks
     checkScreenSize();
-
-    // Add event listener for window resize
+    checkAuth();
+    
+    // Set up event listeners
     window.addEventListener('resize', checkScreenSize);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', checkScreenSize);
+    
+    // Listen for auth changes
+    window.addEventListener('storage', checkAuth);
+    window.addEventListener('auth-change', checkAuth);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('auth-change', checkAuth);
+    };
   }, []);
-
-  // Update localStorage and dispatch custom event when sidebar state changes
+  
+  // Check authentication on route change
   useEffect(() => {
-    if (!mounted) return; // Skip on first render
-
-    // Store sidebar state in localStorage for other components to access
-    localStorage.setItem('sidebarState', isOpen ? 'open' : 'closed');
-
-    // Dispatch custom event for components to listen to
-    const event = new CustomEvent('sidebarChange', { detail: { isOpen } });
-    window.dispatchEvent(event);
-  }, [isOpen, mounted]);
+    if (mounted) {
+      const token = localStorage.getItem(TOKEN_KEY);
+      setIsAuthenticated(!!token);
+    }
+  }, [pathname, mounted]);
 
   const handleLogout = async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       router.push('/login');
-      console.error("token not found")
       return;
     }
 
@@ -67,18 +82,20 @@ export default function Sidebar() {
       });
 
       if (!response.ok) {
-        const responseData = await response.json();
-        console.log("logout failed:", responseData)
+        console.log("Logout failed");
       }
     } catch (error) {
-      console.log("error during logout:", error)
+      console.log("Error during logout:", error);
     } finally {
-      localStorage.removeItem(TOKEN_KEY)
-      router.push('/login')
+      localStorage.removeItem(TOKEN_KEY);
+      
+      // Dispatch auth change event
+      const event = new Event('auth-change');
+      window.dispatchEvent(event);
+      
+      router.push('/login');
     }
-  }
-
-
+  };
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -88,27 +105,22 @@ export default function Sidebar() {
     { name: 'Dashboard', icon: Home, path: '/' },
     { name: 'Menu', icon: BookOpen, path: '/menu' },
     { name: 'Order', icon: Utensils, path: '/order' },
-    // { name: 'Analytics', icon: BarChart2, path: '/analytics' },
-    // { name: 'Users', icon: Users, path: '/users' },
-    // { name: 'Settings', icon: Settings, path: '/settings' },
-    // { name: 'Help', icon: HelpCircle, path: '/help' },
   ];
 
+  // Don't render anything until mounted
   if (!mounted) {
-    // Return a placeholder with matching structure but no content
-    // This minimizes layout shift while preventing hydration mismatch
-    return (
-      <aside className="fixed top-0 left-0 h-full bg-gray-900 w-0">
-        <span className="sr-only">Loading navigation</span>
-      </aside>
-    );
+    return null;
   }
-
+  
+  // Don't render the sidebar on login page or if not authenticated
+  if (isLoginPage || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
-      {/* Mobile toggle button - only visible on mobile */}
-      {mounted && isMobile && (
+      {/* Mobile toggle button */}
+      {isMobile && (
         <div className="lg:hidden fixed top-4 left-4 z-50">
           <button
             onClick={toggleSidebar}
@@ -119,8 +131,8 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Overlay for mobile when sidebar is open */}
-      {mounted && isMobile && isOpen && (
+      {/* Mobile overlay */}
+      {isMobile && isOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
@@ -134,7 +146,7 @@ export default function Sidebar() {
           ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}`}
       >
         <div className="flex flex-col h-full">
-          {/* Sidebar header */}
+          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
             {isOpen && (
               <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -145,7 +157,7 @@ export default function Sidebar() {
               </h1>
             )}
 
-            {/* Toggle button - only visible on desktop */}
+            {/* Toggle button - desktop only */}
             {!isMobile && (
               <button
                 onClick={toggleSidebar}
@@ -167,8 +179,9 @@ export default function Sidebar() {
                   <li key={item.name}>
                     <Link
                       href={item.path}
-                      className={`flex items-center p-3 rounded-md hover:bg-gray-800 transition-colors ${isActive ? 'bg-blue-600 hover:bg-blue-700' : ''
-                        }`}
+                      className={`flex items-center p-3 rounded-md hover:bg-gray-800 transition-colors ${
+                        isActive ? 'bg-blue-600 hover:bg-blue-700' : ''
+                      }`}
                     >
                       <Icon size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
                       {isOpen && <span>{item.name}</span>}
@@ -183,8 +196,9 @@ export default function Sidebar() {
           <div className="p-4 border-t border-gray-700">
             <button
               onClick={handleLogout}
-              className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full ${isOpen ? '' : 'justify-center'
-                }`}
+              className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full ${
+                isOpen ? '' : 'justify-center'
+              }`}
             >
               <LogOut size={20} className={isOpen ? 'mr-3' : ''} />
               {isOpen && <span>Logout</span>}
