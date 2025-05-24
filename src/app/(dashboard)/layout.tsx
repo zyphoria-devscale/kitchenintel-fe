@@ -9,10 +9,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        suppressHydrationWarning
-      >
         <AuthProvider>
           <main>
             <Sidebar />
@@ -20,7 +16,5 @@ export default function RootLayout({
           </main>
           <Toaster />
         </AuthProvider>
-      </body>
-    </html>
   );
 }
