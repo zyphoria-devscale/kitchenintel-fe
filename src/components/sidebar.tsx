@@ -16,6 +16,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -51,14 +52,33 @@ export default function Sidebar() {
 
   const handleLogout = async () => {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    
+    // Set loading state
+    setIsLoggingOut(true);
+    
+    // Clear local storage and cookies immediately (don't wait for API)
+    const clearSession = () => {
+      // Clear localStorage
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('sidebarState');
+      
+      // Clear cookie (for server-side authentication)
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=strict';
+      
+      // Redirect to login
       router.push('/login');
-      console.error("token not found")
+    };
+
+    // If no token, just redirect
+    if (!token) {
+      clearSession();
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/logout", {
+      // Try to logout on server (but don't block if it fails)
+      const response = await fetch("http://127.0.0.1:8000/api/logout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -67,25 +87,24 @@ export default function Sidebar() {
       });
 
       if (!response.ok) {
-        const responseData = await response.json();
-        console.log("logout failed:", responseData)
+        console.warn("Server logout failed, but continuing with client logout");
       }
     } catch (error) {
-      console.log("error during logout:", error)
+      // Network error - but still proceed with client logout
+      console.warn("Network error during logout, proceeding with client logout:", error);
     } finally {
-      localStorage.removeItem(TOKEN_KEY)
-      router.push('/login')
+      // Always clear session and redirect, regardless of server response
+      clearSession();
+      setIsLoggingOut(false);
     }
-  }
-
-
+  };
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
   const navItems = [
-    { name: 'Dashboard', icon: Home, path: '/' },
+    { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'Menu', icon: BookOpen, path: '/menu' },
     { name: 'Order', icon: Utensils, path: '/order' },
     // { name: 'Analytics', icon: BarChart2, path: '/analytics' },
@@ -103,7 +122,6 @@ export default function Sidebar() {
       </aside>
     );
   }
-
 
   return (
     <>
@@ -167,8 +185,9 @@ export default function Sidebar() {
                   <li key={item.name}>
                     <Link
                       href={item.path}
-                      className={`flex items-center p-3 rounded-md hover:bg-gray-800 transition-colors ${isActive ? 'bg-blue-600 hover:bg-blue-700' : ''
-                        }`}
+                      className={`flex items-center p-3 rounded-md hover:bg-gray-800 transition-colors ${
+                        isActive ? 'bg-blue-600 hover:bg-blue-700' : ''
+                      }`}
                     >
                       <Icon size={20} className={isOpen ? 'mr-3' : 'mx-auto'} />
                       {isOpen && <span>{item.name}</span>}
@@ -183,11 +202,25 @@ export default function Sidebar() {
           <div className="p-4 border-t border-gray-700">
             <button
               onClick={handleLogout}
-              className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full ${isOpen ? '' : 'justify-center'
-                }`}
+              disabled={isLoggingOut}
+              className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed ${
+                isOpen ? '' : 'justify-center'
+              }`}
             >
-              <LogOut size={20} className={isOpen ? 'mr-3' : ''} />
-              {isOpen && <span>Logout</span>}
+              {isLoggingOut ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {isOpen && <span className="ml-3">Logging out...</span>}
+                </>
+              ) : (
+                <>
+                  <LogOut size={20} className={isOpen ? 'mr-3' : ''} />
+                  {isOpen && <span>Logout</span>}
+                </>
+              )}
             </button>
           </div>
         </div>

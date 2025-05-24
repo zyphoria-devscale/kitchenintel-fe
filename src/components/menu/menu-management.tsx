@@ -107,11 +107,16 @@ export const MenuManagement = () => {
             if (searchTerm) {
                 params.append('search', searchTerm);
             }
-
+            const token = localStorage.getItem(TOKEN_KEY);
             const url = `${API_URL}/menus/?${params.toString()}`;
             console.log(`Fetching menus from: ${url}`);
 
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                }
+            });
             if (!response.ok) {
                 throw new Error(`Failed to fetch menus: ${response.status}`);
             }
@@ -187,9 +192,11 @@ export const MenuManagement = () => {
             const token = localStorage.getItem(TOKEN_KEY);
             const response = await fetch(`${API_URL}/menu-categories/`, {
                 headers: {
-                    "Authorization": `Token ${token}`
-                },
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                }
             });
+            console.log('Categories API Response:', response);
             if (response.ok) {
                 const data = await response.json();
 
@@ -398,10 +405,9 @@ export const MenuManagement = () => {
             const response = await fetch(`${API_URL}/menus/${menuId}/`, {
                 method: 'DELETE',
                 headers: {
-                    // Include authentication if your API requires it
-                    // 'Authorization': 'Bearer your-token-here'
-                    "Authorization": `Token ${token}`
-                },
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${token}`
+                }
             });
 
             if (!response.ok) {
@@ -594,7 +600,7 @@ export const MenuManagement = () => {
                                     Loading categories...
                                 </SelectItem>
                             ) : categories.length > 0 ? (
-                                categories.filter(item => item.parentId !== null).map((category) => (
+                                categories.map((category) => (
                                     <SelectItem key={category.id} value={category.id}>
                                         {category.title}
                                     </SelectItem>

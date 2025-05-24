@@ -1,6 +1,6 @@
 import { RestaurantDashboard } from "@/components/dashboard/restaurant-dashboard";
 
-export default function Home() {
+export default function Page() {
   return (
     <>
       <RestaurantDashboard />
