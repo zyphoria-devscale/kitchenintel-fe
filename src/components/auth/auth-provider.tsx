@@ -14,13 +14,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (pathname === "/login") {
-      setIsAuthenticated(true);
+    // Check authentication status
+    const token = localStorage.getItem(TOKEN_KEY);
+    
+    // If user is on login page and already authenticated, redirect to dashboard
+    if (pathname === "/login" && token) {
+      router.push("/dashboard");
       return;
     }
-
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    
+    // If user is not on login page and not authenticated, redirect to login
+    if (pathname !== "/login" && !token) {
       router.push("/login");
       setIsAuthenticated(false);
     } else {
@@ -31,7 +35,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   if (pathname === "/login") {
     return <>{children}</>;
   }
-
 
   if (isAuthenticated === null) {
     return (

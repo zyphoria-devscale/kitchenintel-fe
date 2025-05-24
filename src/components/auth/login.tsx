@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TOKEN_KEY } from '@/lib/token';
 
@@ -22,6 +22,14 @@ export const LoginComponent = () => {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
+    // Check if user is already logged in
+    useEffect(() => {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (token) {
+            router.push('/dashboard');
+        }
+    }, [router]);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -38,7 +46,7 @@ export const LoginComponent = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/login', {
+            const response = await fetch('http://127.0.0.1:8000/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
