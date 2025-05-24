@@ -8,7 +8,8 @@ import {
   LogOut, ChevronRight, ChevronLeft,
   BookOpen,
   Utensils,
-  CookingPot
+  CookingPot,
+  MessageSquare,
 } from 'lucide-react';
 import { TOKEN_KEY } from '@/lib/token';
 
@@ -107,6 +108,7 @@ export default function Sidebar() {
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'Menu', icon: BookOpen, path: '/menu' },
     { name: 'Order', icon: Utensils, path: '/order' },
+    { name: 'Chatbot', icon: MessageSquare, path: '/chatbot' },
   ];
 
   if (!mounted) {
