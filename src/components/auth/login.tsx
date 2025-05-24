@@ -46,7 +46,7 @@ export const LoginComponent = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/login', {
+            const response = await fetch('http://127.0.0.1:8000/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -72,12 +72,6 @@ export const LoginComponent = () => {
 
             // Store token in localStorage (for client-side use)
             localStorage.setItem(TOKEN_KEY, data.token);
-
-            // // Set token in cookies (for server-side use)
-            // document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`; // 7 days
-
-            // // Store login timestamp
-            // localStorage.setItem('loginTime', new Date().toISOString());
 
             // Redirect to dashboard
             router.push('/dashboard');
