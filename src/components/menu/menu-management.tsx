@@ -23,7 +23,6 @@ import { TOKEN_KEY } from '@/lib/token';
 // API URL
 const API_URL = 'http://127.0.0.1:8000/api';
 
-// Types based on your API
 type MenuCategory = {
     id: string;
     title: string;
@@ -40,14 +39,6 @@ type Menu = {
     categoryId: string;
     category?: MenuCategory;
     image?: string;
-};
-
-// Pagination type
-type PaginationResponse<T> = {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
 };
 
 // Form schema

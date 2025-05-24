@@ -6,6 +6,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Sector
 } from 'recharts';
 import { TOKEN_KEY } from '@/lib/token';
+import { formatCurrency, formatDate, formatNumber, getDayName } from '@/lib/helper';
 
 // Type definitions based on the API contract
 interface ChartData {
@@ -44,42 +45,6 @@ interface ApiResponse {
 
 // Define the tab types
 type TimeRange = 'weekly' | 'monthly';
-
-// Helper function to format currency in Indonesian Rupiah
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-// Helper function to format large numbers
-const formatNumber = (value: number) => {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
-  }
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K`;
-  }
-  return value.toString();
-};
-
-// Helper function to convert timestamp to readable date
-const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleDateString('id-ID', {
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-// Helper function to get day name from timestamp
-const getDayName = (timestamp: number) => {
-  return new Date(timestamp).toLocaleDateString('id-ID', {
-    weekday: 'short'
-  });
-};
 
 // Restaurant sales dashboard component
 export const RestaurantDashboard = () => {
@@ -201,33 +166,145 @@ export const RestaurantDashboard = () => {
     return dashboardData.find(dashboard => dashboard.type_dashboard === activeTab);
   };
 
+  // Generate dummy data for demonstration
+  const getDummyData = () => {
+    // Dummy sales over time data
+    const salesOverTime = activeTab === 'weekly'
+      ? [
+        { time: 'Monday', sales: 2500000, timestamp: 1 },
+        { time: 'Tuesday', sales: 2800000, timestamp: 2 },
+        { time: 'Wednesday', sales: 3200000, timestamp: 3 },
+        { time: 'Thursday', sales: 2900000, timestamp: 4 },
+        { time: 'Friday', sales: 4100000, timestamp: 5 },
+        { time: 'Saturday', sales: 4800000, timestamp: 6 },
+        { time: 'Sunday', sales: 3600000, timestamp: 7 }
+      ]
+      : [
+        { time: 'Jan', sales: 85000000, timestamp: 1 },
+        { time: 'Feb', sales: 78000000, timestamp: 2 },
+        { time: 'Mar', sales: 92000000, timestamp: 3 },
+        { time: 'Apr', sales: 88000000, timestamp: 4 },
+        { time: 'May', sales: 105000000, timestamp: 5 },
+        { time: 'Jun', sales: 112000000, timestamp: 6 }
+      ];
+
+    // Dummy category data
+    const categoryData = [
+      { name: 'Chinese Food', value: 4800000 },
+      { name: 'Western Food', value: 4200000 },
+      { name: 'Indonesian Food', value: 3600000 },
+      { name: 'Coffee', value: 1800000 },
+      { name: 'Drinks', value: 900000 }
+    ];
+
+    // Dummy top menu items
+    const menuItemsData = [
+      { name: 'Ice Tea', quantity: 98 },
+      { name: 'Matcha Latte', quantity: 85 },
+      { name: 'Dimsum', quantity: 82 },
+      { name: 'Cap Cay', quantity: 78 },
+      { name: 'Spaghetti', quantity: 75 },
+      { name: 'Burger', quantity: 68 },
+      { name: 'Fried Rice', quantity: 65 },
+      { name: 'Nasi Goreng', quantity: 58 },
+      { name: 'Lemon Tea', quantity: 52 },
+      { name: 'Sate Ayam', quantity: 45 },
+      { name: 'Americano', quantity: 42 }
+    ];
+
+    const topMenuItems = menuItemsData.slice(0, 10);
+
+    // Menu performance data (same as topMenuItems but formatted for chart)
+    const menuPerformanceData = menuItemsData.slice(0, 10).map(item => ({
+      name: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name,
+      fullName: item.name,
+      quantity: item.quantity
+    })).sort((a, b) => b.quantity - a.quantity);
+
+    // Dummy hourly data for heatmap
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8 AM to 10 PM
+
+    const hourlyData = hours.map(hour => {
+      const hourData: any = { hour: `${hour}:00` };
+
+      days.forEach(day => {
+        // Generate realistic hourly sales patterns
+        let baseValue = 100000;
+
+        // Weekend boost
+        if (day === 'Saturday' || day === 'Sunday') {
+          baseValue *= 1.3;
+        }
+
+        // Peak hours (12-14, 18-20)
+        if ((hour >= 12 && hour <= 14) || (hour >= 18 && hour <= 20)) {
+          baseValue *= 1.8;
+        }
+        // Lunch hours (11-15)
+        else if (hour >= 11 && hour <= 15) {
+          baseValue *= 1.4;
+        }
+        // Dinner hours (17-21)
+        else if (hour >= 17 && hour <= 21) {
+          baseValue *= 1.6;
+        }
+        // Early morning and late night
+        else if (hour <= 9 || hour >= 21) {
+          baseValue *= 0.4;
+        }
+
+        // Add some randomness
+        baseValue *= (0.8 + Math.random() * 0.4);
+
+        hourData[day] = Math.floor(baseValue);
+      });
+
+      return hourData;
+    });
+
+    return {
+      salesOverTime,
+      categoryData,
+      topMenuItems,
+      menuPerformanceData,
+      hourlyData
+    };
+  };
+
   // Process chart data based on the current dashboard
   const getProcessedData = () => {
     const currentDashboard = getCurrentDashboard();
+
+    // For demo purposes, use dummy data. Remove this block to use API data
+    if (true) { // Change to false to use real API data
+      return getDummyData();
+    }
 
     if (!currentDashboard) {
       return {
         salesOverTime: [],
         categoryData: [],
         topMenuItems: [],
+        menuPerformanceData: [],
         hourlyData: []
       };
     }
 
     // Find specific charts by title
-    const salesOverTimeChart = currentDashboard.graphs.find(g =>
+    const salesOverTimeChart = currentDashboard?.graphs.find(g =>
       g.title.includes('Total Sales Over Time')
     );
 
-    const categoryChart = currentDashboard.graphs.find(g =>
+    const categoryChart = currentDashboard?.graphs.find(g =>
       g.title.includes('Total Sales by Category')
     );
 
-    const menuChart = currentDashboard.graphs.find(g =>
+    const menuChart = currentDashboard?.graphs.find(g =>
       g.title.includes('Top Selling Menu Item') || g.title.includes('Top Twenty Selling Menu Item')
     );
 
-    const hourlyChart = currentDashboard.graphs.find(g =>
+    const hourlyChart = currentDashboard?.graphs.find(g =>
       g.title.includes('Hourly Sales Heatmap')
     );
 
@@ -238,25 +315,45 @@ export const RestaurantDashboard = () => {
       timestamp: item.timestamp
     })).sort((a, b) => a.timestamp! - b.timestamp!) || [];
 
-    // Process category data
+    // Process category data for both bar chart and pie chart
     const categoryData = categoryChart?.chart_data.map(item => ({
       name: item.category || item.label,
       value: item.value as number
     })) || [];
 
-    // Process top menu items
+    // Process top menu items for table
     const topMenuItems = (() => {
       if (!menuChart) return [];
 
-      const topItemsData = menuChart.chart_data.find(item => item.category === 'top_10' || item.label === 'top_10');
+      const topItemsData = menuChart?.chart_data.find(item => item.category === 'top_10' || item.label === 'top_10');
 
-      if (topItemsData && typeof topItemsData.value === 'object') {
-        return Object.entries(topItemsData.value as Record<string, number>)
+      if (topItemsData && typeof topItemsData?.value === 'object') {
+        return Object.entries(topItemsData?.value as Record<string, number>)
           .slice(0, 10)
           .map(([name, quantity]) => ({
             name,
             quantity
           }));
+      }
+
+      return [];
+    })();
+
+    // Process menu performance data for horizontal bar chart (top 10)
+    const menuPerformanceData = (() => {
+      if (!menuChart) return [];
+
+      const topItemsData = menuChart?.chart_data.find(item => item.category === 'top_10' || item.label === 'top_10');
+
+      if (topItemsData && typeof topItemsData?.value === 'object') {
+        return Object.entries(topItemsData?.value as Record<string, number>)
+          .slice(0, 10)
+          .map(([name, quantity]) => ({
+            name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+            fullName: name,
+            quantity
+          }))
+          .sort((a, b) => b.quantity - a.quantity); // Sort by quantity descending
       }
 
       return [];
@@ -274,7 +371,7 @@ export const RestaurantDashboard = () => {
         const hourData: any = { hour: `${hour}:00` };
 
         days.forEach(day => {
-          const hourChartData = hourlyChart.chart_data.find(item => item.category === hour.toString());
+          const hourChartData = hourlyChart?.chart_data.find(item => item.category === hour.toString());
           if (hourChartData && typeof hourChartData.value === 'object') {
             const dayValue = (hourChartData.value as any)[day] || 0;
             hourData[day] = dayValue;
@@ -291,12 +388,24 @@ export const RestaurantDashboard = () => {
       salesOverTime,
       categoryData,
       topMenuItems,
+      menuPerformanceData,
       hourlyData
     };
   };
 
   // Custom colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF6B6B'];
+
+  // Menu performance gradient colors (purple to green like in the image)
+  const MENU_COLORS = [
+    '#6B46C1', '#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD',
+    '#10B981', '#34D399', '#6EE7B7', '#A7F3D0', '#D1FAE5'
+  ];
+
+  // Category colors (purple gradient like in the image)
+  const CATEGORY_COLORS = [
+    '#6B46C1', '#7C3AED', '#8B5CF6', '#A78BFA', '#F87171'
+  ];
 
   // Get processed data
   const data = getProcessedData();
@@ -355,8 +464,8 @@ export const RestaurantDashboard = () => {
   const topSellingItem = data.topMenuItems.length > 0 ? data.topMenuItems[0] : null;
   const averageSale = data.salesOverTime.length > 0 ? totalSales / data.salesOverTime.length : 0;
 
-  // Show loading state
-  if (loading) {
+  // Show loading state - removed for demo, but keep the function
+  if (false && loading) { // Changed to false to skip loading state for demo
     return (
       <main className={`transition-all duration-300 
         ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} 
@@ -371,8 +480,8 @@ export const RestaurantDashboard = () => {
     );
   }
 
-  // Show error state
-  if (error) {
+  // Show error state - removed for demo, but keep the function
+  if (false && error) { // Changed to false to skip error state for demo
     return (
       <main className={`transition-all duration-300 
         ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} 
@@ -451,7 +560,7 @@ export const RestaurantDashboard = () => {
         </div>
 
         {/* Charts section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           {/* Line Chart - Sales Over Time */}
           <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Sales Over Time</h3>
@@ -487,31 +596,92 @@ export const RestaurantDashboard = () => {
             </div>
           </div>
 
-          {/* Bar Chart - Category Sales */}
+          {/* NEW: Menu Item Performance - Vertical Bar Chart */}
           <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Sales by Category</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Top Selling Menu Items</h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.menuPerformanceData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 45 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval={0}
+                  />
+                  <YAxis
+                    tickFormatter={(value) => formatNumber(value)}
+                    label={{ value: 'Quantity Sold', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `${formatNumber(value)} units`,
+                      'Quantity Sold'
+                    ]}
+                    labelFormatter={(label, payload) => {
+                      const item = payload?.[0]?.payload;
+                      return item ? item.fullName : label;
+                    }}
+                    cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                  />
+                  <Bar
+                    dataKey="quantity"
+                    name="Quantity Sold"
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {data.menuPerformanceData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={MENU_COLORS[index % MENU_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Debug info - remove this in production */}
+            <div className="mt-2 text-xs text-gray-500">
+              Data items: {data.menuPerformanceData.length} |
+              Sample: {data.menuPerformanceData[0]?.name} - {data.menuPerformanceData[0]?.quantity}
+            </div>
+          </div>
+
+          {/* NEW: Sales by Category - Vertical Bar Chart */}
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Total Sales by Category</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={data.categoryData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 45 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => formatNumber(value)} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    angle={0}
+                    textAnchor="middle"
+                    height={60}
+                    label={{ value: 'Category', position: 'insideBottom', offset: -3 }}
+                  />
+                  <YAxis
+                    tickFormatter={(value) => `${formatNumber(value / 1000000)}M`}
+                    label={{ value: 'Total Sales (Rp) in Millions', angle: -90, position: 'insideLeft' }}
+                  />
                   <Tooltip
                     formatter={(value: number) => [formatCurrency(value), 'Sales']}
                     cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
                   />
-                  <Legend />
                   <Bar
                     dataKey="value"
-                    fill="#00C49F"
                     name="Sales"
                     radius={[4, 4, 0, 0]}
                   >
                     {data.categoryData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -520,9 +690,9 @@ export const RestaurantDashboard = () => {
           </div>
 
           {/* Pie Chart - Category Distribution */}
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 lg:col-span-2">
+          {/* <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Sales Distribution by Category</h3>
-            <div className="h-96">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -531,8 +701,8 @@ export const RestaurantDashboard = () => {
                     data={data.categoryData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={100}
-                    outerRadius={140}
+                    innerRadius={60}
+                    outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                     onMouseEnter={onPieEnter}
@@ -549,58 +719,144 @@ export const RestaurantDashboard = () => {
               {data.categoryData.map((entry, index) => (
                 <div
                   key={`legend-${index}`}
-                  className="flex items-center"
+                  className="flex items-center cursor-pointer"
                   onMouseEnter={() => setActiveIndex(index)}
                 >
                   <div
                     className="w-4 h-4 mr-2 rounded-sm"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span>{entry.name}</span>
+                  <span className="text-sm">{entry.name}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
-        {/* Top Menu Items Table */}
-        {data.topMenuItems.length > 0 && (
-          <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Top Selling Menu Items</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Menu Item
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Quantity Sold
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {data.topMenuItems.map((item, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.quantity}
-                      </td>
-                    </tr>
+        {/* Peak Hour Pattern - Heatmap */}
+        <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Peak Hour Pattern</h3>
+          <p className="text-sm text-gray-600 mb-6">Hourly Sales Heatmap by Day of Week</p>
+
+          {/* Heatmap Container */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Hours Header */}
+              <div className="flex mb-2">
+                <div className="w-24 flex-shrink-0"></div>
+                <div className="flex-1 grid grid-cols-15 gap-1">
+                  {Array.from({ length: 15 }, (_, i) => i + 8).map(hour => (
+                    <div key={hour} className="text-xs text-center text-gray-500 font-medium">
+                      {hour.toString().padStart(2, '0')}:00
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
+
+              {/* Heatmap Grid */}
+              <div className="space-y-1">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, dayIndex) => (
+                  <div key={day} className="flex items-center">
+                    {/* Day Label */}
+                    <div className="w-24 flex-shrink-0 text-sm font-medium text-gray-700 pr-4">
+                      {day}
+                    </div>
+
+                    {/* Hour Cells */}
+                    <div className="flex-1 grid grid-cols-15 gap-1">
+                      {Array.from({ length: 15 }, (_, hourIndex) => {
+                        const hour = hourIndex + 8;
+
+                        // Use dummy data from hourlyData or generate it
+                        const hourlyValue = data.hourlyData.find(h => h.hour === `${hour}:00`)?.[day] ||
+                          (() => {
+                            // Fallback dummy generation if hourlyData is empty
+                            let baseValue = 100000;
+                            if (day === 'Saturday' || day === 'Sunday') baseValue *= 1.3;
+                            if ((hour >= 12 && hour <= 14) || (hour >= 18 && hour <= 20)) baseValue *= 1.8;
+                            else if (hour >= 11 && hour <= 15) baseValue *= 1.4;
+                            else if (hour >= 17 && hour <= 21) baseValue *= 1.6;
+                            else if (hour <= 9 || hour >= 21) baseValue *= 0.4;
+                            return Math.floor(baseValue * (0.8 + Math.random() * 0.4));
+                          })();
+
+                        const maxValue = 500000;
+                        const intensity = Math.min(hourlyValue / maxValue, 1);
+
+                        // Color based on intensity (red to yellow gradient like in the image)
+                        const getHeatmapColor = (intensity: number) => {
+                          if (intensity < 0.2) return 'bg-yellow-100';
+                          if (intensity < 0.4) return 'bg-yellow-200';
+                          if (intensity < 0.6) return 'bg-yellow-300';
+                          if (intensity < 0.8) return 'bg-orange-400';
+                          return 'bg-red-500';
+                        };
+
+                        const getTextColor = (intensity: number) => {
+                          return intensity > 0.6 ? 'text-white' : 'text-gray-800';
+                        };
+
+                        return (
+                          <div
+                            key={`${day}-${hour}`}
+                            className={`
+                              h-12 flex items-center justify-center text-xs font-medium border border-gray-200 rounded
+                              ${getHeatmapColor(intensity)} ${getTextColor(intensity)}
+                              hover:scale-105 transition-transform cursor-pointer
+                            `}
+                            title={`${day} ${hour}:00 - ${formatCurrency(hourlyValue)}`}
+                          >
+                            {formatNumber(hourlyValue / 1000)}k
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="mt-6 flex items-center justify-center space-x-4">
+                <span className="text-sm text-gray-600">Sales Volume:</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-100 border border-gray-200 rounded"></div>
+                  <span className="text-xs text-gray-500">Low</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-200 border border-gray-200 rounded"></div>
+                  <span className="text-xs text-gray-500">Medium</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-300 border border-gray-200 rounded"></div>
+                  <span className="text-xs text-gray-500">High</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-orange-400 border border-gray-200 rounded"></div>
+                  <span className="text-xs text-gray-500">Very High</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded"></div>
+                  <span className="text-xs text-gray-500">Peak</span>
+                </div>
+              </div>
+
+              {/* Peak Info */}
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span className="text-gray-600">
+                    <strong>Peak sales hour:</strong> 19:00
+                  </span>
+                  <span className="text-gray-600">
+                    <strong>Peak sales day:</strong> Saturday
+                  </span>
+                  <span className="text-gray-600">
+                    <strong>Business hours:</strong> 08:00-22:00
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Insights section */}
         {currentDashboard && (

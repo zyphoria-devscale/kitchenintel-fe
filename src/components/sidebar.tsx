@@ -107,10 +107,6 @@ export default function Sidebar() {
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'Menu', icon: BookOpen, path: '/menu' },
     { name: 'Order', icon: Utensils, path: '/order' },
-    // { name: 'Analytics', icon: BarChart2, path: '/analytics' },
-    // { name: 'Users', icon: Users, path: '/users' },
-    // { name: 'Settings', icon: Settings, path: '/settings' },
-    // { name: 'Help', icon: HelpCircle, path: '/help' },
   ];
 
   if (!mounted) {
@@ -203,7 +199,7 @@ export default function Sidebar() {
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className={`flex items-center p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`flex items-center cursor-pointer p-3 rounded-md text-red-400 hover:bg-gray-800 transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed ${
                 isOpen ? '' : 'justify-center'
               }`}
             >
