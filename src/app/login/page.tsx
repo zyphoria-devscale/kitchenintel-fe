@@ -1,6 +1,10 @@
 // src/app/login/page.tsx
+'use client';
+
 import { LoginComponent } from '@/components/auth/login';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { TOKEN_KEY } from '@/lib/token';
 
 function LoginLoading() {
   return (
@@ -11,14 +15,19 @@ function LoginLoading() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      router.push('/dashboard');
+    }
+  }, [router]);
+
   return (
     <Suspense fallback={<LoginLoading />}>
       <LoginComponent />
     </Suspense>
   );
 }
-
-export const metadata = {
-  title: 'Login - KitchenIntel',
-  description: 'Sign in to access your restaurant dashboard',
-};

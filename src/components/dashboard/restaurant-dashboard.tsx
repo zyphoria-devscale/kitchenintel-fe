@@ -136,65 +136,58 @@ export const RestaurantDashboard = () => {
     };
   }, []);
 
-  // Fetch dashboard data from API
+  // Store data for each tab separately
+  const [weeklyData, setWeeklyData] = useState<DashboardInsight[]>([]);
+  const [monthlyData, setMonthlyData] = useState<DashboardInsight[]>([]);
+
+  // Fetch dashboard data from API based on active tab
   useEffect(() => {
-    const fetchWeeklyDashboardData = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const token = localStorage.getItem(TOKEN_KEY);
-        // Replace with your actual API endpoint
-        const response = await fetch('http://127.0.0.1:8000/api/weekly-dashboard/', {
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+
+        // Determine which endpoint to use based on active tab
+        const endpoint = activeTab === 'weekly' 
+          ? 'http://127.0.0.1:8000/api/weekly-dashboard/' 
+          : 'http://127.0.0.1:8000/api/monthly-dashboard/';
+
+        const response = await fetch(endpoint, {
           headers: {
             "Authorization": `Token ${token}`
           },
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
+          throw new Error(`Failed to fetch ${activeTab} dashboard data`);
         }
 
         const data: ApiResponse = await response.json();
+        
+        // Store data in the appropriate state variable
+        if (activeTab === 'weekly') {
+          setWeeklyData(data.results);
+        } else {
+          setMonthlyData(data.results);
+        }
+
+        // Update the current dashboard data
         setDashboardData(data.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching dashboard data:', err);
+        console.error(`Error fetching ${activeTab} dashboard data:`, err);
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchMonthlyDashboardData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const token = localStorage.getItem(TOKEN_KEY);
-        // Replace with your actual API endpoint
-        const response = await fetch('http://127.0.0.1:8000/api/monthly-dashboard/', {
-          headers: {
-            "Authorization": `Token ${token}`
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-
-        const data: ApiResponse = await response.json();
-        setDashboardData(data.results);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeeklyDashboardData();
-    fetchMonthlyDashboardData();
-  }, []);
+    fetchDashboardData();
+  }, [activeTab]); // Re-fetch when active tab changes
 
   // Get current dashboard data based on active tab
   const getCurrentDashboard = () => {
@@ -306,6 +299,14 @@ export const RestaurantDashboard = () => {
   const handleTabClick = (tab: TimeRange) => {
     setActiveTab(tab);
     setActiveIndex(0);
+    
+    // Update dashboard data from cached data when switching tabs
+    if (tab === 'weekly' && weeklyData.length > 0) {
+      setDashboardData(weeklyData);
+    } else if (tab === 'monthly' && monthlyData.length > 0) {
+      setDashboardData(monthlyData);
+    }
+    // If no cached data exists, the useEffect will trigger a fetch
   };
 
   // Handle pie chart active slice
