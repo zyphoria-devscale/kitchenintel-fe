@@ -9,6 +9,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <div suppressHydrationWarning={true}>{children}</div>
+    <div>{children}</div>
   )
 }
