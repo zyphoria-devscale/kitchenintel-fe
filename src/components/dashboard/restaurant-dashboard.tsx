@@ -60,6 +60,8 @@ export const RestaurantDashboard = () => {
   const [dashboardData, setDashboardData] = useState<DashboardInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeInsightTab, setActiveInsightTab] = useState<'executive' | 'insights' | 'recommendations'>('executive');
+
 
   // Listen for sidebar state changes from localStorage
   useEffect(() => {
@@ -123,8 +125,8 @@ export const RestaurantDashboard = () => {
         }
 
         // Determine which endpoint to use based on active tab
-        const endpoint = activeTab === 'weekly' 
-          ? `${API_BASE_URL}/weekly-dashboard/` 
+        const endpoint = activeTab === 'weekly'
+          ? `${API_BASE_URL}/weekly-dashboard/`
           : `${API_BASE_URL}/monthly-dashboard/`;
 
         const response = await fetch(endpoint, {
@@ -138,7 +140,7 @@ export const RestaurantDashboard = () => {
         }
 
         const data: ApiResponse = await response.json();
-        
+
         // Store data in the appropriate state variable
         if (activeTab === 'weekly') {
           setWeeklyData(data.results);
@@ -167,7 +169,7 @@ export const RestaurantDashboard = () => {
   // Process real API data
   const getProcessedData = () => {
     const currentDashboard = getCurrentDashboard();
-    
+
     if (!currentDashboard || !currentDashboard.graphs) {
       return {
         salesOverTime: [],
@@ -179,24 +181,24 @@ export const RestaurantDashboard = () => {
     }
 
     // Find different chart types from the graphs
-    const salesOverTimeGraph = currentDashboard.graphs.find(g => 
-      g.title.toLowerCase().includes('sales') && 
+    const salesOverTimeGraph = currentDashboard.graphs.find(g =>
+      g.title.toLowerCase().includes('sales') &&
       (g.title.toLowerCase().includes('time') || g.title.toLowerCase().includes('trend'))
     );
-    
-    const categoryGraph = currentDashboard.graphs.find(g => 
-      g.title.toLowerCase().includes('category') || 
+
+    const categoryGraph = currentDashboard.graphs.find(g =>
+      g.title.toLowerCase().includes('category') ||
       g.title.toLowerCase().includes('food type')
     );
-    
-    const menuItemsGraph = currentDashboard.graphs.find(g => 
-      g.title.toLowerCase().includes('menu') || 
+
+    const menuItemsGraph = currentDashboard.graphs.find(g =>
+      g.title.toLowerCase().includes('menu') ||
       g.title.toLowerCase().includes('item') ||
       g.title.toLowerCase().includes('product')
     );
 
-    const hourlyGraph = currentDashboard.graphs.find(g => 
-      g.title.toLowerCase().includes('heatmap') || 
+    const hourlyGraph = currentDashboard.graphs.find(g =>
+      g.title.toLowerCase().includes('heatmap') ||
       g.title.toLowerCase().includes('hourly')
     );
 
@@ -208,13 +210,13 @@ export const RestaurantDashboard = () => {
         let timeLabel = '';
         if (item.timestamp) {
           const date = new Date(item.timestamp);
-          timeLabel = activeTab === 'weekly' 
+          timeLabel = activeTab === 'weekly'
             ? date.toLocaleDateString('en-US', { weekday: 'short' })
             : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         } else {
           timeLabel = item.label || item.date || (activeTab === 'weekly' ? getDayName(index) : `Period ${index + 1}`);
         }
-        
+
         return {
           time: timeLabel,
           sales: typeof item.value === 'number' ? item.value : (item.sales || 0),
@@ -237,10 +239,10 @@ export const RestaurantDashboard = () => {
     let menuPerformanceData: any[] = [];
     if (menuItemsGraph?.chart_data) {
       // Find the chart data item that contains the menu items
-      const menuDataItem = menuItemsGraph.chart_data.find(item => 
+      const menuDataItem = menuItemsGraph.chart_data.find(item =>
         item.category === 'all_data' || item.label === 'all_data'
       );
-      
+
       if (menuDataItem && typeof menuDataItem.value === 'object' && menuDataItem.value !== null) {
         // Convert the object to array of menu items
         topMenuItems = Object.entries(menuDataItem.value as Record<string, number>)
@@ -263,7 +265,7 @@ export const RestaurantDashboard = () => {
     let hourlyData: any[] = [];
     if (hourlyGraph?.chart_data && hourlyGraph.chart_data.length > 0) {
       console.log('Processing hourly data:', hourlyGraph.chart_data); // Debug log
-      
+
       // Transform the API hourly data structure
       hourlyData = hourlyGraph.chart_data
         .map(hourEntry => {
@@ -272,7 +274,7 @@ export const RestaurantDashboard = () => {
             // Convert hour number to formatted time string
             const hourNumber = parseInt(hourValue);
             const formattedHour = `${hourNumber.toString().padStart(2, '0')}:00`;
-            
+
             return {
               hour: formattedHour,
               ...(hourEntry.value as Record<string, number>)
@@ -287,13 +289,13 @@ export const RestaurantDashboard = () => {
           const hourB = parseInt(b.hour.split(':')[0]);
           return hourA - hourB;
         });
-        
+
       console.log('Processed hourly data:', hourlyData); // Debug log
     } else if (salesOverTime.length > 0) {
       // Generate realistic hourly pattern based on actual sales data
       const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
       const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8 AM to 10 PM
-      
+
       // Calculate average daily sales for scaling
       const avgDailySales = salesOverTime.reduce((sum, item) => sum + item.sales, 0) / salesOverTime.length;
 
@@ -359,7 +361,7 @@ export const RestaurantDashboard = () => {
   const handleTabClick = (tab: TimeRange) => {
     setActiveTab(tab);
     setActiveIndex(0);
-    
+
     // Update dashboard data from cached data when switching tabs
     if (tab === 'weekly' && weeklyData.length > 0) {
       setDashboardData(weeklyData);
@@ -462,7 +464,7 @@ export const RestaurantDashboard = () => {
         <div className="p-6 max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Restaurant Dashboard</h1>
           <p className="text-gray-600 mb-6">Performance metrics for your restaurant</p>
-          
+
           {/* Time range tabs */}
           <div className="flex mb-8">
             <div className="border-b border-gray-200 w-full">
@@ -747,7 +749,7 @@ export const RestaurantDashboard = () => {
                           // Use data from hourlyData
                           const hourlyValue = data.hourlyData.find(h => h.hour === `${hour.toString().padStart(2, '0')}:00`)?.[day] || 0;
 
-                          const maxValue = Math.max(...data.hourlyData.flatMap(h => 
+                          const maxValue = Math.max(...data.hourlyData.flatMap(h =>
                             ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => h[d] || 0)
                           ));
                           const intensity = maxValue > 0 ? hourlyValue / maxValue : 0;
@@ -864,10 +866,125 @@ export const RestaurantDashboard = () => {
         {currentDashboard && currentDashboard.insight && (
           <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Business Insights</h3>
+
+            {/* Tabs */}
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="flex space-x-8">
+                {(['executive', 'insights', 'recommendations'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveInsightTab(tab)}
+                    className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeInsightTab === tab
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                  >
+                    {tab === 'executive' ? 'Executive Summary' :
+                      tab === 'insights' ? 'Key Insights' :
+                        'Strategic Recommendations'}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Tab Content */}
             <div className="prose max-w-none text-gray-700">
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                {currentDashboard.insight}
-              </pre>
+              <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                {(() => {
+                  // Parse and separate the sections
+                  const sections = {
+                    executive: [] as string[],
+                    insights: [] as string[],
+                    recommendations: [] as string[]
+                  };
+
+                  let currentSection: keyof typeof sections | null = null;
+                  const lines = currentDashboard.insight.split('\n');
+
+                  lines.forEach(line => {
+                    const trimmedLine = line.trim();
+
+                    if (trimmedLine === 'EXECUTIVE SUMMARY') {
+                      currentSection = 'executive';
+                    } else if (trimmedLine === 'KEY INSIGHTS:') {
+                      currentSection = 'insights';
+                    } else if (trimmedLine === 'STRATEGIC RECOMMENDATIONS:') {
+                      currentSection = 'recommendations';
+                    } else if (currentSection && trimmedLine.length > 0) {
+                      sections[currentSection].push(trimmedLine);
+                    }
+                  });
+
+                  // Render content based on active tab
+                  const renderContent = (content: string[], sectionType: string) => {
+                    return content.map((line, index) => {
+                      const trimmedLine = line.trim();
+
+                      // Check if line starts with a number (strategic recommendations)
+                      if (/^\d+\./.test(trimmedLine)) {
+                        return (
+                          <div key={index} className="mb-4">
+                            <span className="font-normal text-sm text-gray-800">{trimmedLine}</span>
+                          </div>
+                        );
+                      }
+
+                      // Check if line starts with a dash (key insights)
+                      if (trimmedLine.startsWith('- ')) {
+                        const content = trimmedLine.substring(2); // Remove "- "
+                        return (
+                          <div key={index} className="mb-4 ml-2">
+                            <div className="flex items-start">
+                              <span className="text-blue-600 mr-3 mt-1 text-lg">•</span>
+                              <span className="text-gray-700">{content}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Check if line contains "Strategic implication:"
+                      if (trimmedLine.includes('Strategic implication:')) {
+                        return (
+                          <div key={index} className="ml-6 mb-4 p-3 bg-blue-50 border-l-4 border-blue-200 rounded-r">
+                            <span className="italic text-blue-800 text-sm font-medium">{trimmedLine}</span>
+                          </div>
+                        );
+                      }
+
+                      // Executive summary content - convert to bullet points
+                      if (sectionType === 'executive' && trimmedLine.length > 0) {
+                        const sentences = trimmedLine.split('. ').filter(s => s.trim().length > 0);
+
+                        if (sentences.length > 1) {
+                          return sentences.map((sentence, sentenceIndex) => (
+                            <div key={`${index}-${sentenceIndex}`} className="mb-3 ml-2">
+                              <div className="flex items-start">
+                                <span className="text-gray-500 mr-3 mt-1">•</span>
+                                <span className="text-gray-700">
+                                  {sentence.trim()}{sentence.trim().endsWith('.') ? '' : '.'}
+                                </span>
+                              </div>
+                            </div>
+                          ));
+                        }
+                      }
+
+                      // Regular paragraph
+                      if (trimmedLine.length > 0) {
+                        return (
+                          <div key={index} className="mb-4 text-gray-700 leading-relaxed">
+                            {trimmedLine}
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    });
+                  };
+
+                  return renderContent(sections[activeInsightTab], activeInsightTab);
+                })()}
+              </div>
             </div>
           </div>
         )}
