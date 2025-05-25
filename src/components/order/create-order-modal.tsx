@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TOKEN_KEY } from '@/lib/token';
 import { API_BASE_URL } from '@/lib/api_base_url';
+import toast from 'react-hot-toast';
 
 interface MenuItem {
     id: string;
@@ -56,9 +57,17 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 let allMenuItems: MenuItem[] = [];
                 let currentPage = 1;
                 let hasNextPage = true;
+                const token = localStorage.getItem(TOKEN_KEY);
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
 
                 while (hasNextPage) {
-                    const response = await fetch(`${API_BASE_URL}/menus/?page=${currentPage}`);
+                    const response = await fetch(`${API_BASE_URL}/menus/?page=${currentPage}`, {
+                        headers: {
+                            "Authorization": `Token ${token}`
+                        },
+                    });
 
                     if (!response.ok) {
                         throw new Error(`Failed to fetch menu items: ${response.status}`);
@@ -79,7 +88,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                     } else {
                         console.error('Expected array or paginated response but received:', typeof data, data);
                         setMenuItems([]);
-                        alert('Invalid menu data format received from server');
+                        toast.error('Invalid menu data format received from server');
                         return;
                     }
                 }
@@ -89,7 +98,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
 
             } catch (error) {
                 console.error('Error fetching menu items:', error);
-                alert('Failed to load menu items. Please try again.');
+                toast.error('Failed to load menu items. Please try again.');
                 setMenuItems([]); // Set empty array on error
             } finally {
                 setLoading(false);
@@ -145,13 +154,13 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
     const handleSubmit = async () => {
         // Validation
         if (!customerName.trim()) {
-            alert('Please enter customer name');
+            toast('Please enter customer name');
             return;
         }
 
         const validItems = orderItems.filter(item => item.menu_id && item.quantity > 0);
         if (validItems.length === 0) {
-            alert('Please select at least one menu item');
+            toast('Please select at least one menu item');
             return;
         }
 
@@ -167,7 +176,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             };
 
             console.log('Submitting order data:', orderData);
-    
+
             const token = localStorage.getItem(TOKEN_KEY);
             const response = await fetch(`${API_BASE_URL}/orders-with-items/`, {
                 method: 'POST',
@@ -191,23 +200,23 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 }
 
                 onClose();
-                alert('Order created successfully!');
+                toast.success('Order created successfully!');
             } else {
                 const errorData = await response.json();
                 console.error('Error creating order:', errorData);
 
                 // Handle specific error messages
                 if (errorData.customer_name) {
-                    alert(`Customer name error: ${errorData.customer_name.join(', ')}`);
+                    toast.error(`Customer name error: ${errorData.customer_name.join(', ')}`);
                 } else if (errorData.items) {
-                    alert(`Items error: ${JSON.stringify(errorData.items)}`);
+                    toast.error(`Items error: ${JSON.stringify(errorData.items)}`);
                 } else {
-                    alert('Failed to create order. Please check the form data.');
+                    toast.error('Failed to create order. Please check the form data.');
                 }
             }
         } catch (error) {
             console.error('Network error:', error);
-            alert('Network error. Please check your connection and try again.');
+            toast.error('Network error. Please check your connection and try again.');
         }
     };
 
