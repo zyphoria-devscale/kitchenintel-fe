@@ -33,9 +33,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ title }) => {
           </Tooltip>
         </TooltipProvider>
         
-        <Button variant="ghost" size="icon" className="rounded-full">
+        {/* <Button variant="ghost" size="icon" className="rounded-full">
           <Settings className="h-5 w-5 text-gray-500" />
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

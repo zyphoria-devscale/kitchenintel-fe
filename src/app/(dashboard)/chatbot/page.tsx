@@ -36,7 +36,7 @@ export default function ChatbotPage() {
             </CardContent>
           </Card>
           
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Recent Insights</CardTitle>
               <CardDescription>Based on your restaurant data</CardDescription>
@@ -53,7 +53,7 @@ export default function ChatbotPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </DashboardContent>
