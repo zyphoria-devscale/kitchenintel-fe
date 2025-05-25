@@ -19,9 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import toast from 'react-hot-toast';
 import { TOKEN_KEY } from '@/lib/token';
-
-// API URL
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 type MenuCategory = {
     id: string;
@@ -99,7 +97,7 @@ export const MenuManagement = () => {
                 params.append('search', searchTerm);
             }
             const token = localStorage.getItem(TOKEN_KEY);
-            const url = `${API_URL}/menus/?${params.toString()}`;
+            const url = `${API_BASE_URL}/menus/?${params.toString()}`;
             console.log(`Fetching menus from: ${url}`);
 
             const response = await fetch(url, {
@@ -181,7 +179,7 @@ export const MenuManagement = () => {
         setCategoryError(null);
         try {
             const token = localStorage.getItem(TOKEN_KEY);
-            const response = await fetch(`${API_URL}/menu-categories/`, {
+            const response = await fetch(`${API_BASE_URL}/menu-categories/`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Token ${token}`
@@ -314,7 +312,7 @@ export const MenuManagement = () => {
             };
 
             const token = localStorage.getItem(TOKEN_KEY)
-            const response = await fetch(`${API_URL}/menus/`, {
+            const response = await fetch(`${API_BASE_URL}/menus/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -359,7 +357,7 @@ export const MenuManagement = () => {
                 category_id: data.categoryId,
             };
 
-            const response = await fetch(`${API_URL}/menus/${currentMenu.id}/`, {
+            const response = await fetch(`${API_BASE_URL}/menus/${currentMenu.id}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -393,7 +391,7 @@ export const MenuManagement = () => {
         try {
             toast.loading("Deleting menu...");
             const token = localStorage.getItem(TOKEN_KEY);
-            const response = await fetch(`${API_URL}/menus/${menuId}/`, {
+            const response = await fetch(`${API_BASE_URL}/menus/${menuId}/`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
