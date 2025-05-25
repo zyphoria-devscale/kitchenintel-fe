@@ -20,7 +20,7 @@ export function useChatWebSocket(sessionId: string, onMessageReceived: (message:
   useEffect(() => {
     if (!sessionId) return;
     
-    const ws = new WebSocket(`ws://${API_BASE_URL}/ws/chat/${sessionId}/`);
+    const ws = new WebSocket(`wss://${API_BASE_URL}/ws/chat/${sessionId}/`);
     
     ws.onopen = () => {
       console.log('WebSocket connection established');
