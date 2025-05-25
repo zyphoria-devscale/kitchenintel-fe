@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '@/components/chatbot/lib/type';
 import { formatTimestamp } from '@/lib/utils';
-
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 export function useChatWebSocket(sessionId: string, onMessageReceived: (message: Message | Message[]) => void) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -20,7 +20,7 @@ export function useChatWebSocket(sessionId: string, onMessageReceived: (message:
   useEffect(() => {
     if (!sessionId) return;
     
-    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${sessionId}/`);
+    const ws = new WebSocket(`ws://${API_BASE_URL}/ws/chat/${sessionId}/`);
     
     ws.onopen = () => {
       console.log('WebSocket connection established');
