@@ -1,0 +1,66 @@
+/* Custom styles for markdown content */
+.markdown-content {
+  color: var(--color-foreground, #333);
+  font-size: 0.875rem;
+}
+
+/* Basic markdown styling */
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3 {
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content p {
+  margin-bottom: 1em;
+}
+
+.markdown-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Code blocks */
+.markdown-content code {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.markdown-content pre {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+/* Lists - important for "-" markdown */
+.markdown-content ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
+.markdown-content li {
+  display: list-item;
+  margin-bottom: 0.2em;
+}
+
+/* Make sure list items have proper bullets */
+.markdown-content ul > li {
+  list-style-type: disc;
+}
+
+.markdown-content ol > li {
+  list-style-type: decimal;
+}
