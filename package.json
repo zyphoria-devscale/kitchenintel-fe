@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
-    "@prisma/client": "^6.8.2",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-checkbox": "^1.3.1",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -29,7 +28,6 @@
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
     "next-cloudinary": "^6.16.0",
-    "prisma": "^6.8.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",

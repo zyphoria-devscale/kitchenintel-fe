@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TOKEN_KEY } from '@/lib/token';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 interface LoginResponse {
     token: string;
@@ -46,7 +47,7 @@ export const LoginComponent = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/login/', {
+            const response = await fetch(`${API_BASE_URL}/login/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
