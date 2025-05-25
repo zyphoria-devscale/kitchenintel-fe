@@ -15,7 +15,7 @@ export default function ChatbotPage() {
         </div>
         
         {/* Sidebar with information */}
-        <div className="w-full md:w-80 space-y-6">
+        <div className="hidden md:block md:w-72 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>About KitchenIntel AI</CardTitle>
@@ -35,25 +35,6 @@ export default function ChatbotPage() {
               </ul>
             </CardContent>
           </Card>
-          
-          {/* <Card>
-            <CardHeader>
-              <CardTitle>Recent Insights</CardTitle>
-              <CardDescription>Based on your restaurant data</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <h4 className="font-medium text-blue-700 text-sm">Sales Trend</h4>
-                  <p className="text-xs text-gray-600 mt-1">Your weekend sales have increased by 15% compared to last month.</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-700 text-sm">Popular Item</h4>
-                  <p className="text-xs text-gray-600 mt-1">"Chicken Parmesan" has been your best-selling item this week.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card> */}
         </div>
       </div>
     </DashboardContent>

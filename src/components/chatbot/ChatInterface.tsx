@@ -1,88 +1,56 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from '@/components/chatbot/ChatMessage';
 import { ChatHeader } from '@/components/chatbot/ChatHeader';
-import { generateSessionId, formatTimestamp } from '@/lib/utils';
+import { generateSessionId } from '@/lib/utils';
 import { useChatWebSocket } from '@/components/chatbot/hook/useWebsocket';
 import { useAutoScroll } from '@/components/chatbot/hook/useAutoScroll';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import { useMessages } from '@/components/chatbot/hook/useMessages';
+import { ChatInterfaceProps } from '@/components/chatbot/lib/type';
 
-// Types
-interface ChatInterfaceProps {
-  className?: string;
-}
-
-export interface Message {
-  id: string;
-  role: 'system' | 'user';
-  content: string;
-  timestamp: string;
-}
+// Import custom markdown styles
+import './markdown-styles.css';
 
 // Main component
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) => {
   const [inputMessage, setInputMessage] = useState<string>('');
-  const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Initialize session
+  // Initialize session ID
   useEffect(() => {
     setSessionId(generateSessionId());
   }, []);
   
-  // Handle received messages - memoize to prevent recreation on each render
-  const handleMessageReceived = React.useCallback((message: Message | Message[]) => {
-    // Set loading to false when we receive a message
-    setIsLoading(false);
-    
-    if (Array.isArray(message)) {
-      setMessages(message);
-    } else {
-      setMessages(prev => [...prev, message]);
-    }
-  }, []);
+  // Use custom hooks for message management
+  const { messages, handleMessageReceived, addUserMessage, resetMessages } = useMessages();
   
-  // Initialize WebSocket with custom hook
+  // Initialize WebSocket connection
   const { isConnected, sendMessage: sendToSocket, closeConnection } = 
-    useChatWebSocket(sessionId, handleMessageReceived);
+    useChatWebSocket(sessionId, (message) => {
+      setIsLoading(false);
+      handleMessageReceived(message);
+    });
   
-  // Auto-scroll with custom hook
+  // Auto-scroll messages container
   const scrollAreaRef = useAutoScroll([messages]);
   
-  // Effect untuk logging dan menyimpan pesan ke session storage
-  useEffect(() => {
-    if (messages.length > 0 && sessionId) {
-      console.log('All messages:', messages);
-      
-      // Simpan pesan ke session storage
-      sessionStorage.setItem(`chat_${sessionId}`, JSON.stringify(messages));
-    }
-  }, [messages, sessionId]);
-  
-  // Send message handler - memoize to maintain stable reference
-  const handleSendMessage = React.useCallback(() => {
+  // Send message handler
+  const handleSendMessage = useCallback(() => {
     if (!inputMessage.trim() || !isConnected) return;
     
-    // Create a new message
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputMessage,
-      timestamp: formatTimestamp(new Date())
-    };
+    // Add message to UI
+    addUserMessage(inputMessage);
     
-    // Add to messages state
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Set loading state to true
+    // Set loading indicator
     setIsLoading(true);
     
     // Send to server
@@ -90,10 +58,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
     
     // Clear input
     setInputMessage('');
-  }, [inputMessage, isConnected, sendToSocket]);
+  }, [inputMessage, isConnected, sendToSocket, addUserMessage]);
 
   // Handle key press (Enter to send)
-  const handleKeyPress = React.useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -101,26 +69,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
   }, [handleSendMessage]);
   
   // Reset conversation
-  const resetConversation = React.useCallback(() => {
-    // Close existing connection
+  const resetConversation = useCallback(() => {
     closeConnection();
-    
-    // Reset state
-    setMessages([]);
+    resetMessages();
     setIsLoading(false);
-    
-    // Generate new session ID
-    const newSessionId = generateSessionId();
-    setSessionId(newSessionId);
-    
-    // Update localStorage with new session ID
-    localStorage.setItem('chatSessionId', newSessionId);
-    
-    // Clear session storage for old session ID
-    if (sessionId) {
-      sessionStorage.removeItem(`chat_${sessionId}`);
-    }
-  }, [closeConnection, sessionId]);
+    setSessionId(generateSessionId());
+  }, [closeConnection, resetMessages]);
   
   return (
     <div className={`flex flex-col h-[calc(100vh-3rem)] bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden ${className}`}>
@@ -137,10 +91,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
               >
                 {message.role === 'system' ? (
                   <>
-                    {/* Use key to avoid React rendering issues */}
+                    {/* Add specific styling for system messages */}
                     <div key={message.id} className="text-sm markdown-content">
-                      {/* Using useEffect for logging to avoid React node issues */}
-                      <ReactMarkdown>
+                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
                         {message.content}
                       </ReactMarkdown>
                     </div>

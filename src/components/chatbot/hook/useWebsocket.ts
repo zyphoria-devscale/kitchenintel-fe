@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Message } from '../ChatInterface';
+import { Message } from '@/components/chatbot/lib/type';
 import { formatTimestamp } from '@/lib/utils';
 
 
@@ -25,16 +25,6 @@ export function useChatWebSocket(sessionId: string, onMessageReceived: (message:
     ws.onopen = () => {
       console.log('WebSocket connection established');
       setIsConnected(true);
-      
-      // Send initial greeting with markdown for testing
-      const initialMessage: Message = { 
-        id: '1', 
-        role: 'system', 
-        content: '**Hello!** I\'m your *KitchenIntel AI* assistant. How can I help you today?\n\n```\nThis is a code block for testing markdown\n```\n\n- List item 1\n- List item 2', 
-        timestamp: formatTimestamp(new Date()) 
-      };
-      
-      messageReceivedRef.current(initialMessage);
     };
     
     ws.onmessage = (event) => {
@@ -57,7 +47,6 @@ export function useChatWebSocket(sessionId: string, onMessageReceived: (message:
             content: data.message,
             timestamp: formatTimestamp(new Date())
           };
-          console.log("new message", newMessage)
           messageReceivedRef.current(newMessage);
         }
       }
