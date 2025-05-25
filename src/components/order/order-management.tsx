@@ -514,7 +514,7 @@ export const OrderManagement = () => {
             toast.loading('Deleting order...');
 
             const token = localStorage.getItem(TOKEN_KEY)
-            const response = await fetch(`${API_BASE_URL}/orders/${orderId}/`, {
+            const response = await fetch(`${API_BASE_URL}/orders-with-items/${orderId}/`, {
                 method: 'DELETE',
                  headers: {
                     'Content-Type': 'application/json',
