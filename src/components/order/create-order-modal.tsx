@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TOKEN_KEY } from '@/lib/token';
-
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 interface MenuItem {
     id: string;
@@ -59,7 +58,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
                 let hasNextPage = true;
 
                 while (hasNextPage) {
-                    const response = await fetch(`${API_URL}/menus/?page=${currentPage}`);
+                    const response = await fetch(`${API_BASE_URL}/menus/?page=${currentPage}`);
 
                     if (!response.ok) {
                         throw new Error(`Failed to fetch menu items: ${response.status}`);
@@ -170,7 +169,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
             console.log('Submitting order data:', orderData);
     
             const token = localStorage.getItem(TOKEN_KEY);
-            const response = await fetch(`${API_URL}/orders-with-items/`, {
+            const response = await fetch(`${API_BASE_URL}/orders-with-items/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

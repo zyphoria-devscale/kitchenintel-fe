@@ -24,9 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import toast from 'react-hot-toast';
 import CreateOrderModal from './create-order-modal';
 import { TOKEN_KEY } from '@/lib/token';
-
-// API URL
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 // Types based on API contract
 enum OrderStatus {
@@ -152,7 +150,7 @@ export const OrderManagement = () => {
 
             // Create the URL with all parameters
             const token = localStorage.getItem(TOKEN_KEY);
-            const url = `${API_URL}/orders-with-items/?${params.toString()}`;
+            const url = `${API_BASE_URL}/orders-with-items/?${params.toString()}`;
 
             console.log(`Fetching orders from: ${url}`); // Debugging
 
@@ -216,7 +214,7 @@ export const OrderManagement = () => {
 
         try {
             const token = localStorage.getItem(TOKEN_KEY);
-            const response = await fetch(`${API_URL}/menu-categories/`, {
+            const response = await fetch(`${API_BASE_URL}/menu-categories/`, {
                 headers: {
                     'Content-Type': 'application/json',
                     // Include authentication if your API requires it
@@ -246,7 +244,7 @@ export const OrderManagement = () => {
             let hasNextPage = true;
 
             while (hasNextPage) {
-                let url = `${API_URL}/menus/?page=${currentPage}`;
+                let url = `${API_BASE_URL}/menus/?page=${currentPage}`;
                 if (categoryId) {
                     url += `&category_id=${categoryId}`;
                 }
@@ -312,7 +310,7 @@ export const OrderManagement = () => {
             params.append('page', page.toString());
             params.append('status', 'UNPAID'); // Always filter for unpaid only
 
-            const url = `${API_URL}/orders-with-items/?${params.toString()}`;
+            const url = `${API_BASE_URL}/orders-with-items/?${params.toString()}`;
             console.log(`Fetching unpaid orders from: ${url}`);
 
              const token = localStorage.getItem(TOKEN_KEY)
@@ -471,7 +469,7 @@ export const OrderManagement = () => {
             toast.loading('Updating order...');
 
             const token = localStorage.getItem(TOKEN_KEY)
-            const response = await fetch(`${API_URL}/orders-with-items/${currentOrder.id}/`, {
+            const response = await fetch(`${API_BASE_URL}/orders-with-items/${currentOrder.id}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -516,7 +514,7 @@ export const OrderManagement = () => {
             toast.loading('Deleting order...');
 
             const token = localStorage.getItem(TOKEN_KEY)
-            const response = await fetch(`${API_URL}/orders/${orderId}/`, {
+            const response = await fetch(`${API_BASE_URL}/orders/${orderId}/`, {
                 method: 'DELETE',
                  headers: {
                     'Content-Type': 'application/json',
@@ -562,7 +560,7 @@ export const OrderManagement = () => {
             }
 
             const token = localStorage.getItem(TOKEN_KEY)
-            const response = await fetch(`${API_URL}/orders-with-items/${orderId}/`, {
+            const response = await fetch(`${API_BASE_URL}/orders-with-items/${orderId}/`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

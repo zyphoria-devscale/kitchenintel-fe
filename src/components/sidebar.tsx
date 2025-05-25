@@ -12,6 +12,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { TOKEN_KEY } from '@/lib/token';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -79,7 +80,7 @@ export default function Sidebar() {
 
     try {
       // Try to logout on server (but don't block if it fails)
-      const response = await fetch("http://127.0.0.1:8000/api/logout", {
+      const response = await fetch(`${API_BASE_URL}/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

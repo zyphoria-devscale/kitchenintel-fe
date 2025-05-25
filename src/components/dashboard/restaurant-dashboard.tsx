@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { TOKEN_KEY } from '@/lib/token';
 import { formatCurrency, formatDate, formatNumber, getDayName } from '@/lib/helper';
+import { API_BASE_URL } from '@/lib/api_base_url';
 
 // Type definitions based on the API contract
 interface ChartData {
@@ -119,8 +120,8 @@ export const RestaurantDashboard = () => {
 
         // Determine which endpoint to use based on active tab
         const endpoint = activeTab === 'weekly' 
-          ? 'http://127.0.0.1:8000/api/weekly-dashboard/' 
-          : 'http://127.0.0.1:8000/api/monthly-dashboard/';
+          ? `${API_BASE_URL}/weekly-dashboard/` 
+          : `${API_BASE_URL}/monthly-dashboard/`;
 
         const response = await fetch(endpoint, {
           headers: {
